@@ -222,17 +222,17 @@
             // Try multiple APIs in sequence
             const apis = [
                 {
-                    url: 'https://api.datamuse.com/words?sp=?????&max=100',
+                    url: 'https://random-word-api.vercel.app/api?words=50',
                     parse: async (response) => {
                         const words = await response.json();
-                        const valid = words.map(w => w.word).filter(w =>
+                        const valid = words.filter(w =>
                             w.length >= 5 && w.length <= 10 && /^[a-zA-Z]+$/.test(w)
                         );
                         return valid.length > 0 ? valid[Math.floor(Math.random() * valid.length)].toUpperCase() : null;
                     }
                 },
                 {
-                    url: 'https://api.datamuse.com/words?ml=random&max=100',
+                    url: 'https://api.datamuse.com/words?sp=??????&max=100',
                     parse: async (response) => {
                         const words = await response.json();
                         const valid = words.map(w => w.word).filter(w =>
