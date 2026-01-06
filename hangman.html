@@ -216,30 +216,47 @@
             wordDisplay.innerHTML = '<div class="spinner"></div>';
             keyboard.innerHTML = '<p class="loading">Loading word...</p>';
 
-            try {
-                // Using Random Word API to get words between 5-10 characters
-                const response = await fetch('https://random-word-api.herokuapp.com/word?number=50');
-                const words = await response.json();
+            // Fallback words if all APIs fail
+            const fallbackWords = ['PYTHON', 'JAVASCRIPT', 'HANGMAN', 'COMPUTER', 'KEYBOARD', 'MONITOR', 'PROGRAM', 'DEVELOPER', 'BROWSER', 'NETWORK', 'SERVER', 'CLIENT', 'MOBILE', 'SCREEN', 'MEMORY', 'SYSTEM', 'FOLDER', 'WINDOW', 'CURSOR', 'SCROLL'];
 
-                // Filter words to only include those with 5-10 characters and only letters
-                const validWords = words.filter(word =>
-                    word.length >= 5 &&
-                    word.length <= 10 &&
-                    /^[a-zA-Z]+$/.test(word)
-                );
-
-                if (validWords.length > 0) {
-                    return validWords[Math.floor(Math.random() * validWords.length)].toUpperCase();
-                } else {
-                    // Fallback: fetch more words
-                    return await fetchRandomWord();
+            // Try multiple APIs in sequence
+            const apis = [
+                {
+                    url: 'https://api.datamuse.com/words?sp=?????&max=100',
+                    parse: async (response) => {
+                        const words = await response.json();
+                        const valid = words.map(w => w.word).filter(w =>
+                            w.length >= 5 && w.length <= 10 && /^[a-zA-Z]+$/.test(w)
+                        );
+                        return valid.length > 0 ? valid[Math.floor(Math.random() * valid.length)].toUpperCase() : null;
+                    }
+                },
+                {
+                    url: 'https://api.datamuse.com/words?ml=random&max=100',
+                    parse: async (response) => {
+                        const words = await response.json();
+                        const valid = words.map(w => w.word).filter(w =>
+                            w.length >= 5 && w.length <= 10 && /^[a-zA-Z]+$/.test(w)
+                        );
+                        return valid.length > 0 ? valid[Math.floor(Math.random() * valid.length)].toUpperCase() : null;
+                    }
                 }
-            } catch (error) {
-                console.error('Error fetching word:', error);
-                // Fallback words if API fails
-                const fallbackWords = ['PYTHON', 'JAVASCRIPT', 'HANGMAN', 'COMPUTER', 'KEYBOARD', 'MONITOR', 'PROGRAM', 'DEVELOPER'];
-                return fallbackWords[Math.floor(Math.random() * fallbackWords.length)];
+            ];
+
+            for (const api of apis) {
+                try {
+                    const response = await fetch(api.url);
+                    if (response.ok) {
+                        const word = await api.parse(response);
+                        if (word) return word;
+                    }
+                } catch (error) {
+                    console.error('API error:', error);
+                }
             }
+
+            // Use fallback if all APIs fail
+            return fallbackWords[Math.floor(Math.random() * fallbackWords.length)];
         }
 
         function createKeyboard() {
